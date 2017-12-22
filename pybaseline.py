@@ -78,16 +78,6 @@ def pybaseline(data, Rsqd, sigma_xi2, current, multiplier, updateR2, Nch):
 		t6 = time.time()
 		logL = lL(background, data,  Rsqd,  sigma_xi2,  current, size, Nch)
 
-		if j == 1:
-			print(background)
-			print(data)
-			print(Rsqd)
-			print(sigma_xi2)
-			print(current)
-			print(size)
-			print(Nch)
-			print(logL)
-
 		print('logL: ', logL)
 
 		if np.abs(logL - logLold) > 0.0001:
