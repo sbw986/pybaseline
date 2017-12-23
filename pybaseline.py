@@ -1,11 +1,33 @@
+""" pybaseline.py:  Returns baseline from noisy quantal signal """
+
 import numpy as np
 import cmath
 import matplotlib.pyplot as plt
 import time
 from numba import jit
 
-def pybaseline(data, Rsqd, sigma_xi2, current, multiplier, updateR2, Nch):
+def pybaseline(data, Rsqd, sigma_xi2, current, multiplier = 1, updateR2 = False, Nch = 1):
+	"""
+	Parameters
+	----------
+	data : 1D numpy array
+		Raw data signal
+	Rsqd : Double
+		Noise estimate
+	sigma_xi2 : Double
+	current : Double
+		Signal amplitude estimate
+	multiplier : Double
+		Signal multiplier value
+	updateR2 : Boolean
+	Nch : Integer
+		Number of levels
 
+	Returns
+	-------
+	1D numpy array
+		Extracted baseline
+	"""
 	logLold = 1.e50
 	n = 0
 
@@ -27,46 +49,27 @@ def pybaseline(data, Rsqd, sigma_xi2, current, multiplier, updateR2, Nch):
 		j += 1
 
 		p, p2 = set_n2(data, background, current, Rsqd, size, Nch, sigma_xi2)
-		
-		
 
-		t1 = time.time()
-		rhs = set_rhs(p, data, current, Rsqd, size)
+		rhs = set_rhs(p, data, current, Rsqd)
 
-		
-
-		t2 = time.time()
 		if j % 250 == 0:
-			print("j = ", j)
+			print("Iteration = ", j)
 
 		main_d, lower_d, upper_d = set_matrix(size, Rsqd)
-
-		
 
 		background, main_d, rhs = solveMatrix(size, lower_d, main_d, upper_d, rhs, background)
-		
-		
 
 		main_d, lower_d, upper_d = set_matrix(size, Rsqd)
-		t3 = time.time()
-		tmp = A_minus_B(data, background, size)
-		
-		
+		tmp = A_minus_B(data, background)
 
 		if j > 1:
 			if np.sum(p2) > 0:
-				current = AdotB(p, tmp, size) / np.sum(p2)
+				current = AdotB(p, tmp) / np.sum(p2)
 
-		D2 = AdotB(tmp, tmp, size) - 2 * current * AdotB(tmp, p, size) + current * current * np.sum(p2)
+		D2 = AdotB(tmp, tmp) - 2 * current * AdotB(tmp, p) + current * current * np.sum(p2)
 
-		
+		GRADBSQRD = gradbsquared(background)
 
-		t4 = time.time()
-		GRADBSQRD = gradbsquared(background,size)
-
-
-
-		t5 = time.time()
 		BRsqd = (GRADBSQRD/ ((size - 1) * sigma_xi2)) ** 2
 
 		
@@ -75,7 +78,6 @@ def pybaseline(data, Rsqd, sigma_xi2, current, multiplier, updateR2, Nch):
 			Rsqd = updatedRsqd(BRsqd)
 
 		sigma_xi2 = (GRADBSQRD/Rsqd + D2)/(size - 1)
-		t6 = time.time()
 		logL = lL(background, data,  Rsqd,  sigma_xi2,  current, size, Nch)
 
 		print('logL: ', logL)
@@ -84,22 +86,14 @@ def pybaseline(data, Rsqd, sigma_xi2, current, multiplier, updateR2, Nch):
 			logLold = logL
 		else:
 			not_converged = False
-		t7 = time.time()
-		print("times: ", t7-t6, t6-t5, t5-t4, t4-t3, t3-t2,t2-t1, t1-t0)
 	print("converged")
 
-	print('Iteration count: ', j)
+	print('Iteration Total: ', j)
 
 	p, p2 = set_n2(data, background, current, Rsqd, size, Nch, sigma_xi2)
 	
-	tmp = set_reconstruction(p, background, current)
-	plt.plot(p)
-	tmp = set_res(p, data, background, current)
-
-	plt.show()
-
-
-
+	tmp1 = set_reconstruction(p, background, current)
+	tmp2 = set_res(p, data, background, current)
 
 	return background
 
@@ -112,7 +106,6 @@ def set_reconstruction(p, background, current):
 	return tmp
 
 def multiply_array(array, b):	
-	#array_out = [val * b for val in array] SBW Simplified
 	array_out = array * b
 	return array_out
 
@@ -153,18 +146,6 @@ def init_b(data, current):
 	return b
 
 def set_matrix(size, Rsqd):
-	"""
-	main = np.empty(size)
-	lower = np.empty(size)
-	upper = np.empty(size)
-	for i in range(size):
-		main[i] = -1 * Rsqd - 2.0
-		lower[i] = 1
-		upper[i] = 1
-
-		main[0] = -1 * Rsqd - 1
-		main[-1] = -1 * Rsqd - 1
-	"""
 	main = np.ones(size) * -1 * Rsqd - 2.0
 	main[0] = -1 * Rsqd - 1
 	main[-1] = -1 * Rsqd - 1 
@@ -217,25 +198,16 @@ def set_n2(d, background, current, Rsqd, T, Nch, sigma_xi2):
 
 	return n, n2
 
-def set_rhs(p, d, current, Rsqd, l):
-	"""
-	rhs = np.empty(l)
-	for j in range(l):
-		rhs[j] = -1 * Rsqd * (d[j] - current * p[j])
-	"""
+def set_rhs(p, d, current, Rsqd):
 	rhs = -1 * Rsqd * (d - current * p)
-
 	return rhs
 
 @jit
 def solveMatrix(n, a, b, c, v, x):
-	#m = a[1::]/b[0:-1]
-	#b[1::] = b[1::] - m * c[0:-1]
 	for i in range(1,n):
 		m = a[i] / b[i - 1]
 		b[i] = b[i] - m * c[i - 1]
 		v[i] = v[i] - m * v[i - 1]
-		#v[i] = v[i] - m[i - 1] * v[i - 1]
 
 	x[n - 1] = v[n - 1] / b[n - 1]
 
@@ -244,28 +216,15 @@ def solveMatrix(n, a, b, c, v, x):
 
 	return x, b, v
 
-def A_minus_B(A, B, l):
-	#AmB = np.empty(l)
-	"""
-	for i in range(l):
-		AmB[i] = A[i] - B[i]
-	"""
+def A_minus_B(A, B):
 	AmB = A - B
 	return AmB
 
-def AdotB(A, B, l):
-	#ret = 0
-	"""
-	for i in range(l):
-		ret += A[i] * B[i]
-	"""
+def AdotB(A, B):
 	ret = np.sum(A * B)
 	return ret
 
-def gradbsquared(b, l):
-	#ret = 0
-	#for i in range(1,l):
-	#	ret += (b[i] - b[i - 1]) ** 2
+def gradbsquared(b):
 	ret = np.sum((b[1::] - b[0:-1]) ** 2)
 	return ret
 
@@ -283,21 +242,6 @@ def updatedRsqd(BRsqd):
 def lL(background, data, Rsqd, sigma_xi2, current, T, Nch):
 	retval = 0
 	sigma_b2 = Rsqd * sigma_xi2
-
-	"""
-
-	retval_array = ((background[1::] - background[0:-1]) ** 2) / (2 * sigma_b2)
-	retval = np.sum(retval_array)
-
-	tmp = 0
-	tmp_array_logsum = 0
-	for i in range(Nch+1):
-		tmp_array = np.exp(-1 * (data - background - i * current) ** 2)/(2 * sigma_xi2)
-		tmp += np.sum(tmp_array)
-		tmp_array_logsum += np.sum(np.log(tmp_array))
-
-	retval = retval - tmp_array_logsum
-	"""
 	
 	for t in range(T):
 		if t:
@@ -308,8 +252,6 @@ def lL(background, data, Rsqd, sigma_xi2, current, T, Nch):
 			tmp += np.exp((-1 * (data[t] - background[t] - i * current) ** 2)/(2 * sigma_xi2))
 		retval -= np.log(tmp)
 	
-	
-
 	retval += 0.5 * (T - 1) * np.log(sigma_xi2)
 
 	tmp = 0.5 * (np.sqrt(Rsqd + 4) + np.sqrt(Rsqd))
@@ -319,7 +261,7 @@ def lL(background, data, Rsqd, sigma_xi2, current, T, Nch):
 
 if __name__ == "__main__":
 	
-	test_data_len = 50000
+	test_data_len = 5000000
 	#test_data = np.zeros(test_data_len)
 	
 
