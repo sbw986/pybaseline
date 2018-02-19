@@ -261,7 +261,7 @@ def lL(background, data, Rsqd, sigma_xi2, current, T, Nch):
 
 if __name__ == "__main__":
 	
-	test_data_len = 5000000
+	test_data_len = 500000
 	#test_data = np.zeros(test_data_len)
 	
 
