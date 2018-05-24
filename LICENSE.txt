@@ -1,7 +1,6 @@
-This is a manual translation of the idealizer software package from
-C into Python.  The algorithm is originally described in the paper
-"Automated Maximum Likelihood Separation of Signal from Baseline
-in Noisy Quantal Data".
+This is a manual C-to-Python translation of the idealizer software package.
+The algorithm is originally described in the paper "Automated Maximum Likelihood
+Separation of Signal from Baseline in Noisy Quantal Data".
 
 All code from the original work is translated and reproduced in
 accordance with the Los Alamos National Laboratory licence, reproduced
