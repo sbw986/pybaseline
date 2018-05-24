@@ -1,16 +1,10 @@
-The license information for the originally published work can be found below.
-This work is a manual translation of the original C code into Python.
+This is a manual translation of the idealizer software package from
+C into Python.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
-----------------------------------------------------------------------------
-
+All code from the original work is translated and reproduced in
+accordance with the Los Alamos National Laboratory licence, reproduced
+below:
+-----------------------------------------------------------------------------
 This code was written by John Pearson and Bill Bruno at Los Alamos National 
 Laboratory. 
 
