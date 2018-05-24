@@ -5,6 +5,7 @@ All code from the original work is translated and reproduced in
 accordance with the Los Alamos National Laboratory licence, reproduced
 below:
 -----------------------------------------------------------------------------
+
 This code was written by John Pearson and Bill Bruno at Los Alamos National 
 Laboratory. 
 
